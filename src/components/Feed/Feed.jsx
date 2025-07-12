@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Feed.css";
 import thumbnail1 from "../../assets/thumbnail1.png";
 import thumbnail2 from "../../assets/thumbnail2.png";
@@ -9,16 +9,42 @@ import thumbnail6 from "../../assets/thumbnail6.png";
 import thumbnail7 from "../../assets/thumbnail7.png";
 import thumbnail8 from "../../assets/thumbnail8.png";
 import { Link } from "react-router-dom";
+import { API_KEY, valueConverter } from "../../data";
+import moment from "moment";
 
-const Feed = () => {
+const Feed = ({ category }) => {
+  const [data, setData] = useState([]);
+
+  const fetchData = async () => {
+    const videoListUrl = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&chart=mostPopular&maxResults=50&regionCode=US&videoCategoryId=${category}&key=${API_KEY}
+`;
+    await fetch(videoListUrl)
+      .then((response) => response.json())
+      .then((data) => setData(data.items));
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [category]);
+
   return (
     <div className="feed">
-      <Link to={`video/20/2345`} className="card">
-        <img src={thumbnail1} alt="thumbnail" />
-        <h2>Video Name</h2>
-        <h3>Channel Name</h3>
-        <p>Views Count &bull; Days Ago</p>
-      </Link>
+      {data.map((item, index) => {
+        return (
+          <Link
+            to={`video/${item.snippet.categoryId}/${item.id}`}
+            className="card"
+          >
+            <img src={item.snippet.thumbnails.medium.url} alt="thumbnail" />
+            <h2>{item.snippet.title}</h2>
+            <h3>{item.snippet.channelTitle}</h3>
+            <p>
+              {valueConverter(item.statistics.viewCount)} &bull;{" "}
+              {moment(item.snippet.publishedAt).fromNow()}
+            </p>
+          </Link>
+        );
+      })}
     </div>
   );
 };
